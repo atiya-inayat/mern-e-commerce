@@ -1,3 +1,5 @@
+// this file imports the app, connect to database, and start server using app.listen()
+
 import app from "./app.js";
 import connectDB from "./config/database.js";
 

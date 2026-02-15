@@ -1,3 +1,5 @@
+// this file is responsible for creating the express app, adding middleware, registering routes, exporting app
+
 import express from "express";
 import type { Application, Request, Response } from "express";
 import cors from "cors"; // cors allow frontend talk to backend
