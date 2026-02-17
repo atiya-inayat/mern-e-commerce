@@ -2,20 +2,29 @@ import type { Request, Response } from "express";
 import { Product } from "./product.model.js";
 import type { AuthRequest } from "../../middleware/auth.middleware.js";
 
-// Get product by ID
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const products = await Product.find({});
+    return res.json(products);
+  } catch (error) {
+    return res.status(500).json({ message: "Server Error fetching products" });
+  }
+};
 
+// @route   GET /api/v1/products/:id
+export const getProductById = async (req: Request, res: Response) => {
+  try {
+    const product = await Product.findById(req.params.id);
     if (product) {
       return res.json(product);
     } else {
-      return res.status(404).json({ message: "Product not found." });
+      return res.status(404).json({ message: "Product not found" });
     }
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Invalid Product ID", error: (error as Error).message });
+  } catch (error: any) {
+    if (error.name === "CastError") {
+      return res.status(400).json({ message: "Invalid Product ID" });
+    }
+    return res.status(500).json({ message: "Server Error" });
   }
 };
 
