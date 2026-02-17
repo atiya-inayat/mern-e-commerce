@@ -9,6 +9,8 @@ const generateToken = (id: string) => {
     throw new Error("JWT_SECRET is not defined");
   }
 
+  // jwt.sign(payload, secretOrPrivateKey, options?, callback?)
+  // payload - The data you want to include inside the token - Usually user ID, maybe role, or other info - Do not put sensitive info like passwords!
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 };
 

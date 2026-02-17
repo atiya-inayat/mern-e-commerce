@@ -1,10 +1,17 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { User } from "../modules/user/user.model.js";
+import { User, type IUser } from "../modules/user/user.model.js";
 
-// We extend the Express Request type to include the user object
+interface DecodedToken {
+  id: string;
+  iat?: number;
+  exp?: number;
+}
+
+// Create a new type called AuthRequest that is just like Express Request, but with extra things.
+// extends Request → copy everything from Express Request
 export interface AuthRequest extends Request {
-  user?: any;
+  user?: IUser | null;
 }
 
 export const protect = async (
@@ -12,38 +19,47 @@ export const protect = async (
   res: Response,
   next: NextFunction,
 ) => {
-  let token;
-
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
+  // 1. Check if the header exists and starts with 'Bearer'
+  if (req.headers.authorization?.startsWith("Bearer")) {
     try {
-      // Get token from header (Format: Bearer <token>)
-      token = req.headers.authorization.split(" ")[1];
+      // 2. Extract token
+      const token = req.headers.authorization.split(" ")[1]; // “Take the Authorization header, split it by space, and extract the actual token (ignore the word ‘Bearer’).”
+      const secret = process.env.JWT_SECRET;
 
-      // Verify token
-      const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+      if (!secret) {
+        throw new Error("JWT_SECRET is missing from .env");
+      }
 
-      // Get user from the token and attach to request (excluding password)
-      req.user = await User.findById(decoded.id).select("-password");
+      if (!token) {
+        return res.status(401).json({ message: "Not authorized, no token" });
+      }
 
-      next();
+      // 3. Verify (Using the unknown cast to satisfy TypeScript)
+      // “Verify the token and treat the returned data as a DecodedToken type.”
+      const decoded = jwt.verify(token, secret) as unknown as DecodedToken;
+
+      // 4. Find user & attach to request
+      const user = await User.findById(decoded.id).select("-password"); // .select("-password") → exclude password from response (security!)
+
+      if (!user) {
+        return res.status(401).json({ message: "User no longer exists" });
+      }
+
+      req.user = user;
+      return next();
     } catch (error) {
-      res.status(401).json({ message: "Not authorized, token failed" });
+      console.error("JWT Verification Error:", error);
+      return res.status(401).json({ message: "Not authorized, token failed" });
     }
   }
 
-  if (!token) {
-    res.status(401).json({ message: "Not authorized, no token" });
-  }
+  // 5. CRITICAL FALLBACK: If there's no Bearer header, reject the request
+  return res.status(401).json({ message: "Not authorized, no token" });
 };
 
-// Middleware to check for Admin role
 export const admin = (req: AuthRequest, res: Response, next: NextFunction) => {
   if (req.user && req.user.role === "admin") {
-    next();
-  } else {
-    res.status(403).json({ message: "Not authorized as an admin" });
+    return next();
   }
+  return res.status(403).json({ message: "Not authorized as an admin" });
 };
