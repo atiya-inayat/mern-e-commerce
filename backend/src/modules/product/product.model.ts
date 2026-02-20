@@ -1,5 +1,12 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+export interface IReview extends Document {
+  name: string;
+  rating: number;
+  comment: string;
+  user: mongoose.Types.ObjectId;
+}
+
 export interface IProduct extends Document {
   user: mongoose.Types.ObjectId; // The admin who added the product
   name: string;
@@ -11,7 +18,31 @@ export interface IProduct extends Document {
   countInStock: number;
   rating: number;
   numReviews: number;
+  reviews: IReview[];
 }
+
+const reviewSchema = new Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    rating: {
+      type: Number,
+      required: true,
+    },
+    comment: {
+      type: String,
+      required: true,
+    },
+    user: {
+      type: mongoose.Types.ObjectId,
+      required: true,
+      ref: "User",
+    },
+  },
+  { timestamps: true },
+);
 
 const productSchema = new Schema<IProduct>(
   {
@@ -20,6 +51,9 @@ const productSchema = new Schema<IProduct>(
       required: true,
       ref: "User",
     },
+
+    reviews: [reviewSchema],
+
     name: {
       type: String,
       required: true,
