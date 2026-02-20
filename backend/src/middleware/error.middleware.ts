@@ -16,6 +16,11 @@ export const errorHandler = (
   res: Response,
   next: NextFunction,
 ) => {
+  // condition ? valueIfTrue : valueIfFalse
+  // If res.statusCode === 200 - then use 500 - otherwise use res.statusCode
+
+  // If nobody changed the status (it's still 200), then this must be an internal server error → use 500.
+  // Otherwise: If someone already set a proper status (like 404 or 401), keep that status.
   let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   let message = "Server Error"; // default message
 

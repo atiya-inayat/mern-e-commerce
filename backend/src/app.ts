@@ -7,6 +7,7 @@ import helmet from "helmet"; // helmet protects your app by setting secure HTTP 
 import morgan from "morgan"; // morgan logs request in terminal - it help during to see: which route was called, status code, response time
 import dotenv from "dotenv"; // this loads envionment variable from .env file.
 import apiRoutes from "./routes/index.js";
+import { errorHandler, notFound } from "./middleware/error.middleware.js";
 
 dotenv.config(); // activate dotenv - load variables from the .env file
 
@@ -25,5 +26,9 @@ app.use("/api/v1", apiRoutes);
 app.get("/", (req: Request, res: Response) => {
   res.send("API is running...");
 });
+
+// Error middleware - must be at the end
+app.use(notFound);
+app.use(errorHandler);
 
 export default app;
