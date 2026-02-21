@@ -63,6 +63,10 @@ export const createProductReview = async (req: AuthRequest, res: Response) => {
   const { rating, comment } = req.body;
   const product = await Product.findById(req.params.id);
 
+  if (!req.user) {
+    return res.status(401).json({ message: "Not authorized" });
+  }
+
   if (product) {
     const alreadyReviewed = product.reviews.find(
       (r) => r.user.toString() === req.user?._id.toString(),
