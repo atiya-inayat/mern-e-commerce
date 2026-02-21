@@ -4,10 +4,27 @@ import type { AuthRequest } from "../../middleware/auth.middleware.js";
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const products = await Product.find({});
-    return res.json(products);
+    const pageSize = 8; // Number of products per page
+    const page = Number(req.query.pageNumber) || 1;
+
+    // Search logic: If keyword exists, find by name using Regex
+    const keyword = req.query.keyword
+      ? {
+          name: {
+            $regex: req.query.keyword,
+            $options: "i", // Case insensitive
+          } as any,
+        }
+      : {};
+
+    const count = await Product.countDocuments({ ...keyword });
+    const products = await Product.find({ ...keyword })
+      .limit(pageSize)
+      .skip(pageSize * (page - 1));
+
+    res.json({ products, page, pages: Math.ceil(count / pageSize) });
   } catch (error) {
-    return res.status(500).json({ message: "Server Error fetching products" });
+    res.status(500).json({ message: "Server Error fetching products" });
   }
 };
 
@@ -61,37 +78,42 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
 
 export const createProductReview = async (req: AuthRequest, res: Response) => {
   const { rating, comment } = req.body;
-  const product = await Product.findById(req.params.id);
 
   if (!req.user) {
     return res.status(401).json({ message: "Not authorized" });
   }
 
-  if (product) {
-    const alreadyReviewed = product.reviews.find(
-      (r) => r.user.toString() === req.user?._id.toString(),
-    );
+  const product = await Product.findById(req.params.id);
 
-    if (alreadyReviewed) {
-      return res.status(400).json({ message: "Product already reviewed" });
-    }
-
-    const review = {
-      name: req.user?.name,
-      rating: Number(rating),
-      comment,
-      user: req.user?._id,
-    };
-
-    product.reviews.push(review);
-    product.numReviews = product.reviews.length;
-    product.rating =
-      product.reviews.reduce((acc, item) => item.rating + acc, 0) /
-      product.reviews.length;
-
-    await product.save();
-    res.status(201).json({ message: "Review added" });
-  } else {
-    res.status(404).json({ message: "Product not found" });
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
   }
+
+  const userId = req.user._id.toString();
+
+  const alreadyReviewed = product.reviews.find(
+    (r) => r.user.toString() === userId,
+  );
+
+  if (alreadyReviewed) {
+    return res.status(400).json({ message: "Product already reviewed" });
+  }
+
+  const review = {
+    name: req.user.name,
+    rating: Number(rating),
+    comment,
+    user: req.user._id,
+  };
+
+  product.reviews.push(review);
+  product.numReviews = product.reviews.length;
+
+  product.rating =
+    product.reviews.reduce((acc, item) => acc + item.rating, 0) /
+    product.reviews.length;
+
+  await product.save();
+
+  return res.status(201).json({ message: "Review added" });
 };

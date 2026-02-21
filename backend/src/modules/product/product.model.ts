@@ -1,13 +1,13 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-export interface IReview extends Document {
+export interface IReview {
   name: string;
   rating: number;
   comment: string;
   user: mongoose.Types.ObjectId;
 }
 
-export interface IProduct extends Document {
+export interface IProduct {
   user: mongoose.Types.ObjectId; // The admin who added the product
   name: string;
   image: string;
