@@ -14,7 +14,7 @@ const Navbar = () => {
             <input
               type="text"
               placeholder="Search products..."
-              className="w-full px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border rounded-full border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <Search
               className="absolute right-3 top-2.5 text-gray-400"
@@ -33,7 +33,10 @@ const Navbar = () => {
               0
             </span>
           </Link>
-          <Link href="/login" className="transition hover:text-blue-600">
+          <Link
+            href="/login"
+            className="text-blue-800 transition hover:text-blue-600"
+          >
             <User size={24} />
           </Link>
         </div>
