@@ -59,7 +59,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       name,
       price,
       user: req.user._id,
-      image: image || "images/sample.jpg",
+      image: image ? `/${image}` : "/sample.jpg", // <-- make sure leading slash
       brand,
       category,
       countInStock,
